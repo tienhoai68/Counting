@@ -1,0 +1,137 @@
+/* App-level polish for Ant Design UI */
+
+html,
+body {
+  background: #f7f8fc;
+}
+
+.ant-card {
+  border-radius: 14px !important;
+}
+
+.ant-card .ant-card-head {
+  border-bottom: 1px solid rgba(17, 24, 39, 0.06) !important;
+}
+
+/* ===== Responsive layout helpers ===== */
+.cp-shell {
+  padding: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.cp-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .cp-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .cp-shell {
+    padding: 12px;
+  }
+}
+
+/* ===== Table polish ===== */
+.ant-table {
+  border-radius: 14px !important;
+}
+
+.ant-table-container,
+.ant-table-content {
+  border-radius: 14px !important;
+}
+
+.ant-table-thead > tr > th {
+  background: rgba(79, 70, 229, 0.06) !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+
+.ant-table-tbody > tr:nth-child(odd) > td {
+  background: rgba(2, 6, 23, 0.012);
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: rgba(79, 70, 229, 0.05) !important;
+}
+
+/* ===== Inputs / Buttons ===== */
+.ant-input,
+.ant-input-number,
+.ant-select-selector {
+  border-radius: 10px !important;
+}
+
+.ant-btn {
+  border-radius: 10px !important;
+}
+
+/* ===== InputNumber background coloring (positive/negative) ===== */
+.cp-input-pos.ant-input-number,
+.cp-input-pos .ant-input-number-input-wrap,
+.cp-input-pos .ant-input-number-input {
+  background: rgba(16, 185, 129, 0.12) !important;
+}
+
+.cp-input-pos .ant-input-number-input {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+}
+
+.cp-input-pos.ant-input-number {
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  overflow: hidden;
+}
+
+.cp-input-pos.ant-input-number-focused {
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15) !important;
+}
+
+.cp-input-neg.ant-input-number,
+.cp-input-neg .ant-input-number-input-wrap,
+.cp-input-neg .ant-input-number-input {
+  background: rgba(239, 68, 68, 0.10) !important;
+}
+
+.cp-input-neg .ant-input-number-input {
+  background-color: rgba(239, 68, 68, 0.10) !important;
+}
+
+.cp-input-neg.ant-input-number {
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  overflow: hidden;
+}
+
+.cp-input-neg.ant-input-number-focused {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.12) !important;
+}
+
+.cp-input-zero.ant-input-number,
+.cp-input-zero .ant-input-number-input-wrap,
+.cp-input-zero .ant-input-number-input {
+  background: rgba(255, 255, 255, 1) !important;
+}
+
+.cp-input-zero .ant-input-number-input {
+  background-color: rgba(255, 255, 255, 1) !important;
+}
+
+/* Remove inner inset/shadow so inside & outside look identical */
+.cp-input-pos .ant-input-number-input-wrap,
+.cp-input-neg .ant-input-number-input-wrap,
+.cp-input-zero .ant-input-number-input-wrap {
+  box-shadow: none !important;
+}
+
+.cp-input-pos.ant-input-number,
+.cp-input-neg.ant-input-number,
+.cp-input-zero.ant-input-number {
+  box-shadow: none !important;
+}

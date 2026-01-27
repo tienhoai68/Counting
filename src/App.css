@@ -55,6 +55,11 @@ body {
   font-weight: 700 !important;
 }
 
+/* Center player name in table column header */
+.cp-player-col-title {
+  text-align: center;
+}
+
 .ant-table-tbody > tr:nth-child(odd) > td {
   background: rgba(2, 6, 23, 0.012);
 }

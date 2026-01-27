@@ -61,7 +61,7 @@ function nameById(players: Player[], id: string) {
 export default function App() {
   const [players, setPlayers] = useStickyState<Player[]>(DEFAULT_PLAYERS, 'poker-app-players')
   const [rounds, setRounds] = useStickyState<GameRound[]>([], 'poker-app-rounds')
-  const [moneyStep, setMoneyStep] = useStickyState<number>(1000, 'poker-app-moneyStep')
+  const [moneyStep, setMoneyStep] = useStickyState<number>(10000, 'poker-app-moneyStep')
 
   // --- COMPUTED STATE ---
   const totals = useMemo(() => {
@@ -181,11 +181,9 @@ export default function App() {
 
   const removeRound = (roundId: string) => setRounds((prev) => prev.filter((r) => r.id !== roundId))
   const resetGame = () => {
-    setPlayers(DEFAULT_PLAYERS)
     setRounds([])
-    setMoneyStep(1000)
+    setMoneyStep(10000)
 
-    window.localStorage.removeItem('poker-app-players')
     window.localStorage.removeItem('poker-app-rounds')
     window.localStorage.removeItem('poker-app-moneyStep')
   }
@@ -292,7 +290,7 @@ export default function App() {
     })
 
     cols.push({
-      title: 'Cái',
+      title: <div className="cp-player-col-title">Cái</div>,
       key: 'banker',
       width: 140,
       fixed: 'left',
@@ -310,7 +308,7 @@ export default function App() {
 
     for (const player of players) {
       cols.push({
-        title: player.name,
+        title: <div className="cp-player-col-title">{player.name}</div>,
         key: player.id,
         width: playerColWidth,
         align: 'right',

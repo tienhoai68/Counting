@@ -331,7 +331,7 @@ export default function App() {
               onChange={(val) => updateRoundValue(record.id, player.id, val)}
               step={moneyStep}
               formatter={(v) => {
-                if (v === undefined || v === null || v === '') return ''
+                if (v === undefined || v === null) return ''
                 const n = Number(v)
                 if (!Number.isFinite(n)) return ''
                 return new Intl.NumberFormat('vi-VN').format(n)

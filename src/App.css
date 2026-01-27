@@ -79,6 +79,52 @@ body {
   border-radius: 10px !important;
 }
 
+/* ===== Money input with +/- inside ===== */
+.cp-money-input {
+  position: relative;
+  width: 100%;
+}
+
+.cp-money-input .ant-input-number {
+  width: 100%;
+}
+
+.cp-money-input .ant-input-number-input {
+  padding-left: 28px !important;
+  padding-right: 28px !important;
+}
+
+.cp-money-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  font-weight: 900;
+  line-height: 22px;
+  padding: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cp-money-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cp-money-btn-minus {
+  left: 6px;
+  color: #ef4444;
+}
+
+.cp-money-btn-plus {
+  right: 6px;
+  color: #10b981;
+}
+
 /* ===== InputNumber background coloring (positive/negative) ===== */
 .cp-input-pos.ant-input-number,
 .cp-input-pos .ant-input-number-input-wrap,

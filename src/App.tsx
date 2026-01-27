@@ -342,6 +342,29 @@ export default function App() {
               disabled={isBanker}
               onChange={(val) => updateRoundValue(record.id, player.id, val)}
               step={moneyStep}
+              controls={false}
+              addonBefore={
+                <Button
+                  size="small"
+                  type="text"
+                  disabled={isBanker}
+                  onClick={() => updateRoundValue(record.id, player.id, (record.values[player.id] ?? 0) - moneyStep)}
+                  style={{ color: '#ef4444', fontWeight: 800, padding: 0, width: 22, height: 22, lineHeight: '22px' }}
+                >
+                  -
+                </Button>
+              }
+              addonAfter={
+                <Button
+                  size="small"
+                  type="text"
+                  disabled={isBanker}
+                  onClick={() => updateRoundValue(record.id, player.id, (record.values[player.id] ?? 0) + moneyStep)}
+                  style={{ color: '#10b981', fontWeight: 800, padding: 0, width: 22, height: 22, lineHeight: '22px' }}
+                >
+                  +
+                </Button>
+              }
               formatter={(v) => {
                 if (v === undefined || v === null) return ''
                 const n = Number(v)

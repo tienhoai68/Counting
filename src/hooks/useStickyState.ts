@@ -1,4 +1,4 @@
-import { useState, useEffect, Dispatch, SetStateAction } from 'react';
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 
 function useStickyState<T>(defaultValue: T, key: string): [T, Dispatch<SetStateAction<T>>] {
   const [value, setValue] = useState<T>(() => {

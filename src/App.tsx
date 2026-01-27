@@ -17,6 +17,11 @@ import {
 } from 'antd'
 import { saveAs } from 'file-saver'
 import { useMemo } from 'react'
+
+const CrownIcon = ({ size = 14 }: { size?: number }) => (
+  <span style={{ color: '#f59e0b', fontSize: size, lineHeight: 1 }}>♛</span>
+)
+
 import * as XLSX from 'xlsx'
 import './App.css'
 import useStickyState from './hooks/useStickyState'
@@ -258,7 +263,7 @@ export default function App() {
   // --- TABLE COLUMNS ---
   const tableColumns = (() => {
     const cols: Array<{
-      title: string
+      title: React.ReactNode
       dataIndex?: any
       key: string
       width?: number
@@ -308,12 +313,21 @@ export default function App() {
 
     for (const player of players) {
       cols.push({
-        title: <div className="cp-player-col-title">{player.name}</div>,
+        title: (
+          <div className="cp-player-col-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            {player.name}
+            <span style={{ visibility: 'hidden' }}>
+              <CrownIcon />
+            </span>
+          </div>
+        ),
         key: player.id,
         width: playerColWidth,
         align: 'right',
         render: (_: unknown, record: GameRound) => {
           const isBanker = record.bankerId === player.id
+
+          // no-op: title is derived elsewhere
           const sumParticipants = players
             .filter((p) => p.id !== record.bankerId)
             .reduce((s, p) => s + (record.values[p.id] ?? 0), 0)
@@ -364,6 +378,21 @@ export default function App() {
 
     return cols
   })()
+
+  // Highlight banker (người làm cái) in player column headers
+  for (const col of tableColumns) {
+    const pid = col.key as string
+    if (!pid || pid === 'van' || pid === 'banker' || pid === 'action') continue
+    const isBanker = rounds.some((r) => r.bankerId === pid)
+    if (!isBanker) continue
+    if (typeof col.title === 'string') continue
+    col.title = (
+      <div className="cp-player-col-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+        {nameById(players, pid)}
+        <CrownIcon />
+      </div>
+    )
+  }
 
   const tableScroll = useMemo(() => {
     const y = rounds.length > 10 ? 520 : undefined

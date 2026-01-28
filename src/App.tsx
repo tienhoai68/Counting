@@ -7,6 +7,7 @@ import {
   InputNumber,
   Layout,
   List,
+  Modal,
   Popconfirm,
   Select,
   Space,
@@ -16,7 +17,7 @@ import {
   theme,
 } from 'antd'
 import { saveAs } from 'file-saver'
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 
 const CrownIcon = ({ size = 14 }: { size?: number }) => (
   <span style={{ color: '#f59e0b', fontSize: size, lineHeight: 1 }}>♛</span>
@@ -67,6 +68,10 @@ export default function App() {
   const [players, setPlayers] = useStickyState<Player[]>(DEFAULT_PLAYERS, 'poker-app-players')
   const [rounds, setRounds] = useStickyState<GameRound[]>([], 'poker-app-rounds')
   const [moneyStep, setMoneyStep] = useStickyState<number>(10000, 'poker-app-moneyStep')
+
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false)
+  const [isCelebrating, setIsCelebrating] = useState(false)
+  const celebrationIntervalRef = useRef<number | null>(null)
 
   // --- COMPUTED STATE ---
   const totals = useMemo(() => {
@@ -155,6 +160,12 @@ export default function App() {
       .sort((a, b) => Math.abs(b.net) - Math.abs(a.net))
   }, [finalSettlement, players])
 
+  const ranking = useMemo(() => {
+    return players
+      .map((p) => ({ personId: p.id, total: totals[p.id] ?? 0 }))
+      .sort((a, b) => b.total - a.total)
+  }, [players, totals])
+
   // --- HANDLERS ---
   const addPlayer = () => setPlayers((prev) => [...prev, { id: uid(), name: `Người chơi ${prev.length + 1}` }])
   const removePlayer = (id: string) => {
@@ -185,12 +196,74 @@ export default function App() {
   }
 
   const removeRound = (roundId: string) => setRounds((prev) => prev.filter((r) => r.id !== roundId))
-  const resetGame = () => {
+
+  const resetGameNow = () => {
     setRounds([])
     setMoneyStep(10000)
 
     window.localStorage.removeItem('poker-app-rounds')
     window.localStorage.removeItem('poker-app-moneyStep')
+  }
+
+  const stopCelebration = () => {
+    if (celebrationIntervalRef.current) {
+      window.clearInterval(celebrationIntervalRef.current)
+      celebrationIntervalRef.current = null
+    }
+    setIsCelebrating(false)
+  }
+
+  const startCelebration = () => {
+    if (isCelebrating) return
+    setIsCelebrating(true)
+
+    const spawn = () => {
+      const host = document.getElementById('cp-fireworks-host')
+      if (!host) return
+
+      const el = document.createElement('div')
+      el.className = 'cp-firework'
+      el.style.left = `${Math.random() * 100}%`
+      el.style.top = `${12 + Math.random() * 45}%`
+      const palette = [
+        [340, 95, 62],
+        [20, 95, 60],
+        [48, 95, 56],
+        [120, 85, 50],
+        [165, 90, 48],
+        [200, 95, 58],
+        [255, 92, 66],
+        [285, 95, 64],
+      ]
+      const [h, s, l] = palette[Math.floor(Math.random() * palette.length)]
+      el.style.setProperty('--h', String(h))
+      el.style.setProperty('--s', `${s}%`)
+      el.style.setProperty('--l', `${l}%`)
+
+      const sparkCount = 14 + Math.floor(Math.random() * 12) // 14..25
+      for (let i = 0; i < sparkCount; i++) {
+        const s = document.createElement('span')
+        s.className = 'cp-spark'
+        s.style.setProperty('--a', `${Math.floor(Math.random() * 360)}deg`)
+        s.style.setProperty('--d', `${18 + Math.floor(Math.random() * 34)}px`)
+        el.appendChild(s)
+      }
+
+      host.appendChild(el)
+      window.setTimeout(() => el.remove(), 1300)
+    }
+
+    spawn()
+    celebrationIntervalRef.current = window.setInterval(spawn, 220)
+  }
+
+  const resetGame = () => {
+    if (rounds.length === 0) {
+      resetGameNow()
+      return
+    }
+    setIsResetModalOpen(true)
+    startCelebration()
   }
 
   const exportExcel = () => {
@@ -300,14 +373,17 @@ export default function App() {
       width: 140,
       fixed: 'left',
       render: (_: unknown, record: GameRound) => (
-        <Select
-          value={record.bankerId || undefined}
-          onChange={(val) => updateRound(record.id, { bankerId: val })}
-          style={{ width: '100%' }}
-          placeholder="Chọn cái"
-          options={players.map((p) => ({ value: p.id, label: p.name }))}
-          size="middle"
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Select
+            value={record.bankerId || undefined}
+            onChange={(val) => updateRound(record.id, { bankerId: val })}
+            style={{ width: '100%' }}
+            placeholder="Chọn cái"
+            options={players.map((p) => ({ value: p.id, label: p.name }))}
+            size="middle"
+          />
+          {record.bankerId ? <CrownIcon size={16} /> : null}
+        </div>
       ),
     })
 
@@ -345,7 +421,7 @@ export default function App() {
               controls={false}
               addonBefore={
                 <Button
-                  size="small"
+                  size="large"
                   type="text"
                   disabled={isBanker}
                   onClick={() => updateRoundValue(record.id, player.id, (record.values[player.id] ?? 0) - moneyStep)}
@@ -356,7 +432,7 @@ export default function App() {
               }
               addonAfter={
                 <Button
-                  size="small"
+                  size="large"
                   type="text"
                   disabled={isBanker}
                   onClick={() => updateRoundValue(record.id, player.id, (record.values[player.id] ?? 0) + moneyStep)}
@@ -376,8 +452,8 @@ export default function App() {
                 const n = Number(raw)
                 return Number.isFinite(n) ? n : 0
               }}
-              style={{ width: '100%', textAlign: 'right', background: isBanker ? '#f3f4f6' : undefined }}
-              className={className}
+              style={{ width: '100%', textAlign: 'center', background: isBanker ? '#f3f4f6' : undefined }}
+              className={`${className} cp-inputnumber-square-center`}
               placeholder="0"
               size="middle"
             />
@@ -402,20 +478,6 @@ export default function App() {
     return cols
   })()
 
-  // Highlight banker (người làm cái) in player column headers
-  for (const col of tableColumns) {
-    const pid = col.key as string
-    if (!pid || pid === 'van' || pid === 'banker' || pid === 'action') continue
-    const isBanker = rounds.some((r) => r.bankerId === pid)
-    if (!isBanker) continue
-    if (typeof col.title === 'string') continue
-    col.title = (
-      <div className="cp-player-col-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-        {nameById(players, pid)}
-        <CrownIcon />
-      </div>
-    )
-  }
 
   const tableScroll = useMemo(() => {
     const y = rounds.length > 10 ? 520 : undefined
@@ -484,6 +546,60 @@ export default function App() {
             </Button>
           </Space>
         </Layout.Header>
+
+        <div id="cp-fireworks-host" />
+
+        <Modal
+          title="Bảng xếp hạng"
+          open={isResetModalOpen}
+          onCancel={() => {
+            setIsResetModalOpen(false)
+            stopCelebration()
+          }}
+          onOk={() => {
+            setIsResetModalOpen(false)
+            stopCelebration()
+            resetGameNow()
+          }}
+          okText="Làm mới"
+          cancelText="Đóng"
+          centered
+        >
+          <List
+            size="small"
+            dataSource={ranking}
+            renderItem={(r, index) => {
+              const isTop = index === 0
+              const color = r.total > 0 ? '#10b981' : r.total < 0 ? '#ef4444' : '#0f172a'
+              return (
+                <List.Item style={{ padding: '10px 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: 12, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div
+                        style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 999,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: isTop ? 'rgba(245, 158, 11, 0.14)' : 'rgba(15, 23, 42, 0.06)',
+                          fontWeight: 800,
+                          color: isTop ? '#f59e0b' : '#0f172a',
+                        }}
+                      >
+                        {index + 1}
+                      </div>
+                      <div style={{ fontWeight: 700, color: '#0f172a' }}>{nameById(players, r.personId)}</div>
+                      {isTop ? <CrownIcon size={16} /> : null}
+                    </div>
+                    <div style={{ fontWeight: 900, color }}>{formatVnd(r.total)}</div>
+                  </div>
+                </List.Item>
+              )
+            }}
+          />
+        </Modal>
 
         <div className="cp-shell">
           <div className="cp-grid">

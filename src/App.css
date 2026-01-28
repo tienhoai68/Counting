@@ -61,7 +61,7 @@ body {
 }
 
 .ant-table-tbody > tr:nth-child(odd) > td {
-  background: rgba(2, 6, 23, 0.012);
+  background: rgba(99, 102, 241, 0.06) !important;
 }
 
 .ant-table-tbody > tr:hover > td {
@@ -70,13 +70,58 @@ body {
 
 /* ===== Inputs / Buttons ===== */
 .ant-input,
-.ant-input-number,
 .ant-select-selector {
   border-radius: 10px !important;
 }
 
+/* InputNumber: no border radius (square) */
+.ant-input-number,
+.ant-input-number .ant-input-number-input-wrap,
+.ant-input-number .ant-input-number-input,
+.ant-input-number-group-wrapper,
+.ant-input-number-group,
+.ant-input-number-group-addon {
+  border-radius: 0 !important;
+}
+
 .ant-btn {
   border-radius: 10px !important;
+}
+
+/* Make InputNumber with addonBefore/After have square middle input so it aligns with +/- buttons */
+.cp-inputnumber-square-center.ant-input-number .ant-input-number-group-wrapper,
+.cp-inputnumber-square-center .ant-input-number-group-wrapper,
+.cp-inputnumber-square-center.ant-input-number .ant-input-number-group,
+.cp-inputnumber-square-center .ant-input-number-group {
+  border-radius: 10px !important;
+}
+
+.cp-inputnumber-square-center.ant-input-number .ant-input-number-group-addon,
+.cp-inputnumber-square-center .ant-input-number-group-addon {
+  border-radius: 0 !important;
+}
+
+.cp-inputnumber-square-center.ant-input-number .ant-input-number-group-addon:first-child,
+.cp-inputnumber-square-center .ant-input-number-group-addon:first-child {
+  border-top-left-radius: 10px !important;
+  border-bottom-left-radius: 10px !important;
+}
+
+.cp-inputnumber-square-center.ant-input-number .ant-input-number-group-addon:last-child,
+.cp-inputnumber-square-center .ant-input-number-group-addon:last-child {
+  border-top-right-radius: 10px !important;
+  border-bottom-right-radius: 10px !important;
+}
+
+.cp-inputnumber-square-center.ant-input-number .ant-input-number-input-wrap,
+.cp-inputnumber-square-center .ant-input-number-input-wrap {
+  border-radius: 0 !important;
+}
+
+.cp-inputnumber-square-center.ant-input-number .ant-input-number-input,
+.cp-inputnumber-square-center .ant-input-number-input {
+  border-radius: 0 !important;
+  text-align: center !important;
 }
 
 /* ===== Money input with +/- inside ===== */
@@ -185,4 +230,99 @@ body {
 .cp-input-neg.ant-input-number,
 .cp-input-zero.ant-input-number {
   box-shadow: none !important;
+}
+
+/* ===== Simple "fireworks" for winner modal ===== */
+#cp-fireworks-host {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.cp-firework {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: hsl(var(--h) var(--s, 92%) var(--l, 62%));
+  box-shadow:
+    0 0 8px hsla(var(--h) var(--s, 92%) var(--l, 62%) / 0.9),
+    0 0 16px hsla(var(--h) var(--s, 92%) var(--l, 62%) / 0.45);
+  animation: cp-firework-pop 1.25s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.cp-firework::before,
+.cp-firework::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: inherit;
+}
+
+.cp-firework::before {
+  transform: translate(18px, 0);
+  opacity: 0.9;
+}
+
+.cp-firework::after {
+  transform: translate(-18px, 0);
+  opacity: 0.9;
+}
+
+.cp-firework .cp-spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  margin-left: -1.5px;
+  margin-top: -1.5px;
+  border-radius: 999px;
+  background: hsl(var(--h) var(--s, 92%) var(--l, 62%));
+  box-shadow: 0 0 6px hsla(var(--h) var(--s, 92%) var(--l, 62%) / 0.85);
+  transform: rotate(var(--a)) translateX(0) scale(0.9);
+  opacity: 0;
+  animation: cp-spark 1.25s ease-out forwards;
+}
+
+@keyframes cp-spark {
+  0% {
+    transform: rotate(var(--a)) translateX(0) scale(0.6);
+    opacity: 0;
+    filter: blur(0px);
+  }
+  12% {
+    opacity: 1;
+  }
+  70% {
+    transform: rotate(var(--a)) translateX(var(--d)) scale(1);
+    opacity: 0.9;
+    filter: blur(0.2px);
+  }
+  100% {
+    transform: rotate(var(--a)) translateX(calc(var(--d) * 1.15)) scale(0.7);
+    opacity: 0;
+    filter: blur(0.6px);
+  }
+}
+
+@keyframes cp-firework-pop {
+  0% {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  60% {
+    transform: scale(3.0);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(3.7);
+    opacity: 0;
+  }
 }

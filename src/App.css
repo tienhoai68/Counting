@@ -122,6 +122,59 @@ body[data-theme='dark'] .ant-input-number-group-wrapper-disabled .ant-btn:disabl
   border-radius: 14px !important;
 }
 
+.cp-table-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.cp-table-bg .ant-table-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.cp-table-bg .ant-table-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--cp-table-bg-image);
+  background-repeat: no-repeat;
+  background-position: center 60%;
+  background-size: cover;
+  opacity: 0.8;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Ensure all table layers render above the background image */
+.cp-table-bg .ant-table-container,
+.cp-table-bg .ant-table-container * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Let the background image show through table header/body cells */
+.cp-table-bg .ant-table-thead > tr > th,
+.cp-table-bg .ant-table-tbody > tr > td {
+  background: transparent !important;
+}
+
+/* Keep hover/striping subtle but transparent */
+.cp-table-bg .ant-table-tbody > tr:nth-child(odd) > td {
+  background: rgba(99, 102, 241, 0.04) !important;
+}
+
+.cp-table-bg .ant-table-tbody > tr:hover > td {
+  background: rgba(79, 70, 229, 0.06) !important;
+}
+
+body[data-theme='dark'] .cp-table-bg .ant-table-tbody > tr:nth-child(odd) > td {
+  background: rgba(15, 23, 42, 0.18) !important;
+}
+
+body[data-theme='dark'] .cp-table-bg .ant-table-tbody > tr:hover > td {
+  background: rgba(99, 102, 241, 0.10) !important;
+}
+
 .ant-table-container,
 .ant-table-content {
   border-radius: 14px !important;

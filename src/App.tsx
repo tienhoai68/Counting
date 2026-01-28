@@ -29,6 +29,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import * as XLSX from 'xlsx'
 import './App.css'
+import frameBg from './assets/Frame.svg'
 import logo from './assets/logo.svg'
 import useStickyState from './hooks/useStickyState'
 
@@ -703,9 +704,16 @@ export default function App() {
       <Layout
         style={{
           minHeight: '100vh',
-          background: isDarkMode
-            ? 'radial-gradient(1200px 500px at 10% 0%, rgba(79,70,229,0.22) 0%, rgba(11,18,32,1) 55%)'
-            : 'radial-gradient(1200px 500px at 10% 0%, rgba(79,70,229,0.12) 0%, rgba(247,248,252,1) 50%)',
+          backgroundImage: isDarkMode
+            ? `url(${frameBg}), radial-gradient(1200px 500px at 10% 0%, rgba(79,70,229,0.22) 0%, rgba(11,18,32,1) 55%)`
+            : `url(${frameBg}), radial-gradient(1200px 500px at 10% 0%, rgba(79,70,229,0.12) 0%, rgba(247,248,252,1) 50%)`,
+          // Make only the SVG background "faded" by blending it with a solid color.
+          backgroundRepeat: 'no-repeat, no-repeat',
+          backgroundPosition: 'center center, center center',
+          backgroundSize: 'cover, cover',
+          backgroundAttachment: 'fixed, fixed',
+          backgroundColor: isDarkMode ? 'rgba(11,18,32,0.2)' : 'rgba(255,255,255,0.2)',
+          backgroundBlendMode: 'multiply, normal',
         }}
       >
         {isPortrait ? (
@@ -747,9 +755,7 @@ export default function App() {
         ) : null}
         <Layout.Header
           style={{
-            background: isDarkMode
-              ? 'linear-gradient(135deg, #1e293b 0%, #111827 100%)'
-              : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            background: '#A329AE',
             padding: '0 24px',
             height: 64,
             display: 'flex',
@@ -776,7 +782,7 @@ export default function App() {
                 textOverflow: 'ellipsis',
               }}
             >
-              Settlement
+              MONEYTET
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -981,6 +987,10 @@ export default function App() {
                 bodyStyle={{ padding: 0 }}
               >
                 <Table
+                  className="cp-table-bg"
+                  style={{
+                    ['--cp-table-bg-image' as any]: `url(${frameBg})`,
+                  }}
                   columns={tableColumns as any}
                   dataSource={rounds}
                   rowKey="id"

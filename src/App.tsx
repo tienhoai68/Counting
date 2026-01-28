@@ -77,7 +77,7 @@ export default function App() {
   const [players, setPlayers] = useStickyState<Player[]>(DEFAULT_PLAYERS, 'poker-app-players')
   const [isPortrait, setIsPortrait] = useState(false)
   const [rounds, setRounds] = useStickyState<GameRound[]>([], 'poker-app-rounds')
-  const [moneyStep, setMoneyStep] = useStickyState<number>(10000, 'poker-app-moneyStep')
+  const [moneyStep, setMoneyStep] = useStickyState<number>(5000, 'poker-app-moneyStep')
 
   const [isResetModalOpen, setIsResetModalOpen] = useState(false)
 

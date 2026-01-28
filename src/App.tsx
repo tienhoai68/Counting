@@ -1,4 +1,12 @@
-import { DeleteOutlined, DownloadOutlined, PlusOutlined, ReloadOutlined, UserAddOutlined } from '@ant-design/icons'
+import {
+  DeleteOutlined,
+  DownloadOutlined,
+  MoonOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  SunOutlined,
+  UserAddOutlined,
+} from '@ant-design/icons'
 import {
   Button,
   Card,
@@ -17,15 +25,15 @@ import {
   theme,
 } from 'antd'
 import { saveAs } from 'file-saver'
-import { useMemo, useRef, useState } from 'react'
-
-const CrownIcon = ({ size = 14 }: { size?: number }) => (
-  <span style={{ color: '#f59e0b', fontSize: size, lineHeight: 1 }}>♛</span>
-)
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import * as XLSX from 'xlsx'
 import './App.css'
 import useStickyState from './hooks/useStickyState'
+
+const CrownIcon = ({ size = 14 }: { size?: number }) => (
+  <span style={{ color: '#f59e0b', fontSize: size, lineHeight: 1 }}>♛</span>
+)
 
 // --- TYPES ---
 type Player = { id: string; name: string }
@@ -66,10 +74,41 @@ function nameById(players: Player[], id: string) {
 // --- COMPONENT ---
 export default function App() {
   const [players, setPlayers] = useStickyState<Player[]>(DEFAULT_PLAYERS, 'poker-app-players')
+  const [isPortrait, setIsPortrait] = useState(false)
   const [rounds, setRounds] = useStickyState<GameRound[]>([], 'poker-app-rounds')
   const [moneyStep, setMoneyStep] = useStickyState<number>(10000, 'poker-app-moneyStep')
 
   const [isResetModalOpen, setIsResetModalOpen] = useState(false)
+
+  const trailsCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const mainCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const rafRef = useRef<number | null>(null)
+
+  const [isDarkMode, setIsDarkMode] = useStickyState<boolean>(false, 'poker-app-darkmode')
+
+  useEffect(() => {
+    document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light')
+  }, [isDarkMode])
+
+  useEffect(() => {
+    const compute = () => {
+      // Prefer screen.orientation when available; fallback to viewport ratio.
+      const so: any = (window.screen as any)?.orientation
+      const isPortraitByApi = typeof so?.type === 'string' ? so.type.startsWith('portrait') : undefined
+      const isPortraitByRatio = window.innerHeight > window.innerWidth
+      setIsPortrait(isPortraitByApi ?? isPortraitByRatio)
+    }
+
+    compute()
+    window.addEventListener('resize', compute)
+    window.addEventListener('orientationchange', compute)
+
+    return () => {
+      window.removeEventListener('resize', compute)
+      window.removeEventListener('orientationchange', compute)
+    }
+  }, [])
+
   const [isCelebrating, setIsCelebrating] = useState(false)
   const celebrationIntervalRef = useRef<number | null>(null)
 
@@ -210,51 +249,178 @@ export default function App() {
       window.clearInterval(celebrationIntervalRef.current)
       celebrationIntervalRef.current = null
     }
+
+    if (rafRef.current) {
+      window.cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
+
+    const trails = trailsCanvasRef.current
+    const main = mainCanvasRef.current
+    if (trails) {
+      const ctx = trails.getContext('2d')
+      if (ctx) ctx.clearRect(0, 0, trails.width, trails.height)
+    }
+    if (main) {
+      const ctx = main.getContext('2d')
+      if (ctx) ctx.clearRect(0, 0, main.width, main.height)
+    }
+
     setIsCelebrating(false)
+  }
+
+  type FireworkParticle = {
+    x: number
+    y: number
+    vx: number
+    vy: number
+    size: number
+    hue: number
+    sat: number
+    light: number
+    alpha: number
+    decay: number
   }
 
   const startCelebration = () => {
     if (isCelebrating) return
     setIsCelebrating(true)
 
-    const spawn = () => {
-      const host = document.getElementById('cp-fireworks-host')
+    const trailsCanvas = trailsCanvasRef.current
+    const mainCanvas = mainCanvasRef.current
+    if (!trailsCanvas || !mainCanvas) return
+
+    let didCleanup = false
+
+    const trailsCtx = trailsCanvas.getContext('2d')
+    const mainCtx = mainCanvas.getContext('2d')
+    if (!trailsCtx || !mainCtx) return
+
+    const cleanupFns: Array<() => void> = []
+
+    const palette: Array<[number, number, number]> = [
+      [340, 95, 62],
+      [20, 95, 60],
+      [48, 95, 56],
+      [120, 85, 50],
+      [165, 90, 48],
+      [200, 95, 58],
+      [255, 92, 66],
+      [285, 95, 64],
+    ]
+
+    const particles: FireworkParticle[] = []
+
+    const resize = () => {
+      const host = document.getElementById('cp-fireworks-canvas-host')
       if (!host) return
 
-      const el = document.createElement('div')
-      el.className = 'cp-firework'
-      el.style.left = `${Math.random() * 100}%`
-      el.style.top = `${12 + Math.random() * 45}%`
-      const palette = [
-        [340, 95, 62],
-        [20, 95, 60],
-        [48, 95, 56],
-        [120, 85, 50],
-        [165, 90, 48],
-        [200, 95, 58],
-        [255, 92, 66],
-        [285, 95, 64],
-      ]
-      const [h, s, l] = palette[Math.floor(Math.random() * palette.length)]
-      el.style.setProperty('--h', String(h))
-      el.style.setProperty('--s', `${s}%`)
-      el.style.setProperty('--l', `${l}%`)
+      const rect = host.getBoundingClientRect()
+      const dpr = window.devicePixelRatio || 1
 
-      const sparkCount = 14 + Math.floor(Math.random() * 12) // 14..25
-      for (let i = 0; i < sparkCount; i++) {
-        const s = document.createElement('span')
-        s.className = 'cp-spark'
-        s.style.setProperty('--a', `${Math.floor(Math.random() * 360)}deg`)
-        s.style.setProperty('--d', `${18 + Math.floor(Math.random() * 34)}px`)
-        el.appendChild(s)
-      }
+      trailsCanvas.width = Math.max(1, Math.floor(rect.width * dpr))
+      trailsCanvas.height = Math.max(1, Math.floor(rect.height * dpr))
+      mainCanvas.width = Math.max(1, Math.floor(rect.width * dpr))
+      mainCanvas.height = Math.max(1, Math.floor(rect.height * dpr))
 
-      host.appendChild(el)
-      window.setTimeout(() => el.remove(), 1300)
+      trailsCanvas.style.width = `${rect.width}px`
+      trailsCanvas.style.height = `${rect.height}px`
+      mainCanvas.style.width = `${rect.width}px`
+      mainCanvas.style.height = `${rect.height}px`
+
+      trailsCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      mainCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
     }
 
-    spawn()
-    celebrationIntervalRef.current = window.setInterval(spawn, 220)
+    resize()
+    const onResize = () => resize()
+    window.addEventListener('resize', onResize)
+    cleanupFns.push(() => window.removeEventListener('resize', onResize))
+
+    const spawnExplosion = () => {
+      const host = document.getElementById('cp-fireworks-canvas-host')
+      if (!host) return
+      const rect = host.getBoundingClientRect()
+
+      const x = Math.random() * rect.width
+      const y = rect.height * (0.15 + Math.random() * 0.45)
+
+      const [h, s, l] = palette[Math.floor(Math.random() * palette.length)]
+      const count = 60 + Math.floor(Math.random() * 60)
+
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2
+        const sp = 1.2 + Math.random() * 3.2
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp,
+          size: 1.5 + Math.random() * 2,
+          hue: h,
+          sat: s,
+          light: l,
+          alpha: 1,
+          decay: 0.01 + Math.random() * 0.015,
+        })
+      }
+    }
+
+    spawnExplosion()
+    celebrationIntervalRef.current = window.setInterval(spawnExplosion, 650)
+
+    let last = performance.now()
+    const tick = (now: number) => {
+      const dt = Math.min(32, now - last)
+      last = now
+
+      const host = document.getElementById('cp-fireworks-canvas-host')
+      if (!host) return
+      const rect = host.getBoundingClientRect()
+
+      trailsCtx.fillStyle = `rgba(0, 0, 0, 0.18)`
+      trailsCtx.fillRect(0, 0, rect.width, rect.height)
+
+      mainCtx.clearRect(0, 0, rect.width, rect.height)
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i]
+        p.x += p.vx * (dt / 16)
+        p.y += p.vy * (dt / 16)
+        p.vy += 0.08 * (dt / 16)
+        p.alpha -= p.decay * (dt / 16)
+
+        if (p.alpha <= 0) {
+          particles.splice(i, 1)
+          continue
+        }
+
+        const fill = `hsla(${p.hue} ${p.sat}% ${p.light}% / ${p.alpha})`
+
+        trailsCtx.fillStyle = fill
+        trailsCtx.beginPath()
+        trailsCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
+        trailsCtx.fill()
+
+        mainCtx.fillStyle = fill
+        mainCtx.beginPath()
+        mainCtx.arc(p.x, p.y, Math.max(0.7, p.size * 0.85), 0, Math.PI * 2)
+        mainCtx.fill()
+      }
+
+      rafRef.current = window.requestAnimationFrame(tick)
+    }
+
+    rafRef.current = window.requestAnimationFrame(tick)
+
+    const cleanup = () => {
+      if (didCleanup) return
+      didCleanup = true
+      cleanupFns.forEach((fn) => fn())
+      cleanupFns.length = 0
+    }
+
+    return cleanup
   }
 
   const resetGame = () => {
@@ -263,8 +429,22 @@ export default function App() {
       return
     }
     setIsResetModalOpen(true)
-    startCelebration()
   }
+
+  useEffect(() => {
+    if (!isResetModalOpen) return
+
+    // Start after modal content has mounted so canvas refs exist.
+    const t = window.setTimeout(() => {
+      startCelebration()
+    }, 0)
+
+    return () => {
+      window.clearTimeout(t)
+      stopCelebration()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isResetModalOpen])
 
   const exportExcel = () => {
     const now = new Date()
@@ -490,35 +670,92 @@ export default function App() {
   return (
     <ConfigProvider
       theme={{
-        algorithm: theme.defaultAlgorithm,
+        algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#4f46e5',
-          colorInfo: '#4f46e5',
+          colorPrimary: '#6366f1',
+          colorInfo: '#6366f1',
           borderRadius: 10,
-          colorBgContainer: '#ffffff',
-          colorBgLayout: '#f7f8fc',
-          colorBorderSecondary: 'rgba(15,23,42,0.10)',
+          colorBgContainer: isDarkMode ? '#111827' : '#ffffff',
+          colorBgLayout: isDarkMode ? '#0b1220' : '#f7f8fc',
+          colorBorderSecondary: isDarkMode ? 'rgba(148, 163, 184, 0.16)' : 'rgba(15,23,42,0.10)',
+          colorText: isDarkMode ? 'rgba(255,255,255,0.88)' : 'rgba(15,23,42,0.92)',
+          colorTextSecondary: isDarkMode ? 'rgba(226,232,240,0.72)' : 'rgba(51,65,85,0.80)',
+          colorFillSecondary: isDarkMode ? 'rgba(148, 163, 184, 0.10)' : 'rgba(15,23,42,0.06)',
         },
         components: {
           Table: {
-            headerBg: 'rgba(79, 70, 229, 0.06)',
-            headerColor: '#0f172a',
-            rowHoverBg: 'rgba(79, 70, 229, 0.05)',
-            borderColor: 'rgba(15,23,42,0.10)',
+            headerBg: isDarkMode ? 'rgba(99, 102, 241, 0.14)' : 'rgba(79, 70, 229, 0.06)',
+            headerColor: isDarkMode ? 'rgba(255,255,255,0.88)' : '#0f172a',
+            rowHoverBg: isDarkMode ? 'rgba(99, 102, 241, 0.10)' : 'rgba(79, 70, 229, 0.05)',
+            borderColor: isDarkMode ? 'rgba(148, 163, 184, 0.16)' : 'rgba(15,23,42,0.10)',
+          },
+          Modal: {
+            contentBg: isDarkMode ? '#0f172a' : '#ffffff',
+            headerBg: isDarkMode ? '#0f172a' : '#ffffff',
+          },
+          Tabs: {
+            inkBarColor: '#6366f1',
           },
         },
       }}
     >
-      <Layout style={{ minHeight: '100vh', background: 'radial-gradient(1200px 500px at 10% 0%, rgba(79,70,229,0.12) 0%, rgba(247,248,252,1) 50%)' }}>
+      <Layout
+        style={{
+          minHeight: '100vh',
+          background: isDarkMode
+            ? 'radial-gradient(1200px 500px at 10% 0%, rgba(79,70,229,0.22) 0%, rgba(11,18,32,1) 55%)'
+            : 'radial-gradient(1200px 500px at 10% 0%, rgba(79,70,229,0.12) 0%, rgba(247,248,252,1) 50%)',
+        }}
+      >
+        {isPortrait ? (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 10000,
+              background: isDarkMode ? 'rgba(2, 6, 23, 0.92)' : 'rgba(15, 23, 42, 0.88)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 16,
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{
+                maxWidth: 420,
+                width: '100%',
+                borderRadius: 14,
+                padding: 16,
+                background: isDarkMode ? 'rgba(17, 24, 39, 0.92)' : 'rgba(255,255,255,0.98)',
+                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.55)' : '0 12px 40px rgba(15,23,42,0.22)',
+                border: isDarkMode ? '1px solid rgba(148, 163, 184, 0.16)' : '1px solid rgba(15,23,42,0.10)',
+              }}
+            >
+              <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 8, color: isDarkMode ? 'rgba(255,255,255,0.92)' : '#0f172a' }}>
+                Vui lòng xoay ngang màn hình
+              </Typography.Title>
+              <Typography.Text style={{ display: 'block', marginBottom: 12, color: isDarkMode ? 'rgba(226,232,240,0.75)' : 'rgba(51,65,85,0.88)' }}>
+                Ứng dụng này được tối ưu cho chế độ ngang.
+              </Typography.Text>
+              <Button type="primary" onClick={() => (window.screen as any)?.orientation?.lock?.('landscape')}>
+                Thử tự xoay
+              </Button>
+            </div>
+          </div>
+        ) : null}
         <Layout.Header
           style={{
-            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+            background: isDarkMode
+              ? 'linear-gradient(135deg, #1e293b 0%, #111827 100%)'
+              : 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
             padding: '0 24px',
             height: 64,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            boxShadow: isDarkMode ? '0 1px 3px rgba(0,0,0,0.5)' : '0 1px 3px rgba(0,0,0,0.1)',
+            borderBottom: isDarkMode ? '1px solid rgba(148, 163, 184, 0.16)' : 'none',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -528,10 +765,28 @@ export default function App() {
           </div>
           <Space>
             <Button
+              icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+              onClick={() => setIsDarkMode((v) => !v)}
+              type="default"
+              style={{
+                background: isDarkMode ? 'rgba(15, 23, 42, 0.35)' : 'rgba(255,255,255,0.95)',
+                borderColor: isDarkMode ? 'rgba(226,232,240,0.35)' : 'rgba(15,23,42,0.18)',
+                color: isDarkMode ? 'rgba(255,255,255,0.92)' : 'rgba(15,23,42,0.92)',
+                fontWeight: 650,
+              }}
+            >
+              {isDarkMode ? 'Light' : 'Dark'}
+            </Button>
+            <Button
               icon={<ReloadOutlined />}
               onClick={resetGame}
               type="default"
-              style={{ background: 'rgba(255,255,255,0.9)', fontWeight: 500 }}
+              style={{
+                background: isDarkMode ? 'rgba(15, 23, 42, 0.35)' : 'rgba(255,255,255,0.95)',
+                borderColor: isDarkMode ? 'rgba(226,232,240,0.35)' : 'rgba(15,23,42,0.18)',
+                color: isDarkMode ? 'rgba(255,255,255,0.92)' : 'rgba(15,23,42,0.92)',
+                fontWeight: 650,
+              }}
             >
               Làm mới
             </Button>
@@ -547,9 +802,19 @@ export default function App() {
           </Space>
         </Layout.Header>
 
-        <div id="cp-fireworks-host" />
+        {isResetModalOpen ? (
+          <div
+            id="cp-fireworks-canvas-host"
+            style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 900, overflow: 'hidden' }}
+          >
+            <canvas ref={trailsCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+            <canvas ref={mainCanvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+          </div>
+        ) : null}
 
         <Modal
+          mask={false}
+          modalRender={(node) => <div style={{ opacity: 0.9 }}>{node}</div>}
           title="Bảng xếp hạng"
           open={isResetModalOpen}
           onCancel={() => {
@@ -570,7 +835,7 @@ export default function App() {
             dataSource={ranking}
             renderItem={(r, index) => {
               const isTop = index === 0
-              const color = r.total > 0 ? '#10b981' : r.total < 0 ? '#ef4444' : '#0f172a'
+              const color = r.total > 0 ? '#10b981' : r.total < 0 ? '#ef4444' : isDarkMode ? 'rgba(226,232,240,0.82)' : '#0f172a'
               return (
                 <List.Item style={{ padding: '10px 0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: 12, alignItems: 'center' }}>
@@ -583,14 +848,18 @@ export default function App() {
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          background: isTop ? 'rgba(245, 158, 11, 0.14)' : 'rgba(15, 23, 42, 0.06)',
+                          background: isTop
+                            ? 'rgba(245, 158, 11, 0.14)'
+                            : isDarkMode
+                              ? 'rgba(226,232,240,0.10)'
+                              : 'rgba(15, 23, 42, 0.06)',
                           fontWeight: 800,
-                          color: isTop ? '#f59e0b' : '#0f172a',
+                          color: isTop ? '#f59e0b' : isDarkMode ? 'rgba(226,232,240,0.88)' : '#0f172a',
                         }}
                       >
                         {index + 1}
                       </div>
-                      <div style={{ fontWeight: 700, color: '#0f172a' }}>{nameById(players, r.personId)}</div>
+                      <div style={{ fontWeight: 700 }}>{nameById(players, r.personId)}</div>
                       {isTop ? <CrownIcon size={16} /> : null}
                     </div>
                     <div style={{ fontWeight: 900, color }}>{formatVnd(r.total)}</div>
@@ -609,7 +878,7 @@ export default function App() {
                 extra={
                   <Space size={10}>
                     <Space size={6}>
-                      <span style={{ fontSize: 12, fontWeight: 650, color: '#334155' }}>Bước nhảy</span>
+                      <span style={{ fontSize: 12, fontWeight: 650, color: isDarkMode ? 'rgba(226,232,240,0.72)' : '#334155' }}>Bước nhảy</span>
                       <InputNumber
                         size="middle"
                         value={moneyStep}
@@ -639,7 +908,7 @@ export default function App() {
                   sticky
                 />
                 {rounds.length === 0 && (
-                  <div style={{ padding: 18, textAlign: 'center', color: '#64748b' }}>
+                  <div style={{ padding: 18, textAlign: 'center', color: isDarkMode ? 'rgba(226,232,240,0.6)' : '#64748b' }}>
                     <div style={{ fontWeight: 600 }}>Chưa có ván nào</div>
                     <div style={{ fontSize: 12, marginTop: 4 }}>Bấm “Thêm ván” để bắt đầu.</div>
                   </div>
@@ -666,7 +935,7 @@ export default function App() {
                             return (
                               <List.Item style={{ padding: '8px 0' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: 12 }}>
-                                  <div style={{ fontWeight: 650, color: '#0f172a' }}>{p.name}</div>
+                                  <div style={{ fontWeight: 650 }}>{p.name}</div>
                                   <div
                                     style={{
                                       fontWeight: 800,
@@ -694,7 +963,7 @@ export default function App() {
                           renderItem={(t) => (
                             <List.Item style={{ padding: '8px 0' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: 12 }}>
-                                <div style={{ fontWeight: 650, color: '#0f172a' }}>
+                                <div style={{ fontWeight: 650 }}>
                                   {nameById(players, t.fromId)} → {nameById(players, t.toId)}
                                 </div>
                                 <div style={{ fontWeight: 800, color: '#ef4444' }}>{formatVnd(t.amount)}</div>
@@ -716,7 +985,7 @@ export default function App() {
                             <List.Item style={{ padding: '8px 0' }}>
                               <div style={{ width: '100%' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                                  <div style={{ fontWeight: 650, color: '#0f172a' }}>{nameById(players, d.personId)}</div>
+                                  <div style={{ fontWeight: 650 }}>{nameById(players, d.personId)}</div>
                                   <div style={{ fontWeight: 800, color: d.net >= 0 ? '#10b981' : '#ef4444' }}>
                                     {d.net >= 0 ? `+${formatVnd(d.net)}` : formatVnd(d.net)}
                                   </div>

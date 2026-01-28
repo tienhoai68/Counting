@@ -759,7 +759,7 @@ export default function App() {
             borderBottom: isDarkMode ? '1px solid rgba(148, 163, 184, 0.16)' : 'none',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, height: 64 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <img
               src={logo}
               alt="Settlement"
@@ -779,19 +779,63 @@ export default function App() {
               Settlement
             </div>
           </div>
-          <Space>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Button
-              icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
               onClick={() => setIsDarkMode((v) => !v)}
               type="default"
               style={{
+                padding: 0,
+                width: 64,
+                height: 34,
+                borderRadius: 999,
+                overflow: 'hidden',
                 background: isDarkMode ? 'rgba(15, 23, 42, 0.35)' : 'rgba(255,255,255,0.95)',
                 borderColor: isDarkMode ? 'rgba(226,232,240,0.35)' : 'rgba(15,23,42,0.18)',
-                color: isDarkMode ? 'rgba(255,255,255,0.92)' : 'rgba(15,23,42,0.92)',
-                fontWeight: 650,
+                boxShadow: isDarkMode ? '0 6px 18px rgba(0,0,0,0.35)' : '0 6px 18px rgba(15,23,42,0.12)',
               }}
             >
-              {isDarkMode ? 'Light' : 'Dark'}
+              <div
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '100%',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0 10px',
+                    fontSize: 14,
+                    color: isDarkMode ? 'rgba(226,232,240,0.85)' : 'rgba(15,23,42,0.65)',
+                  }}
+                >
+                  <MoonOutlined />
+                  <SunOutlined />
+                </div>
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 3,
+                    left: isDarkMode ? 33 : 3,
+                    width: 28,
+                    height: 28,
+                    borderRadius: 999,
+                    background: isDarkMode ? 'rgba(226,232,240,0.92)' : 'rgba(255,255,255,0.98)',
+                    boxShadow: isDarkMode ? '0 6px 16px rgba(0,0,0,0.35)' : '0 6px 16px rgba(15,23,42,0.18)',
+                    transition: 'left 180ms ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: isDarkMode ? '#0f172a' : '#4f46e5',
+                  }}
+                >
+                  {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+                </div>
+              </div>
             </Button>
             <Button
               icon={<ReloadOutlined />}
@@ -815,7 +859,7 @@ export default function App() {
             >
               Xuất Excel
             </Button>
-          </Space>
+          </div>
         </Layout.Header>
 
         {isResetModalOpen ? (
@@ -901,9 +945,31 @@ export default function App() {
                         onChange={(value) => setMoneyStep(value || 1000)}
                         step={1000}
                         min={0}
+                        controls={false}
+                        className="cp-inputnumber-square-center"
                         formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
                         parser={(value) => Number((value ?? '').replace(/\./g, ''))}
                         style={{ width: 140 }}
+                        addonBefore={
+                          <Button
+                            size="middle"
+                            type="text"
+                            onClick={() => setMoneyStep(Math.max(0, (moneyStep ?? 0) - 1000))}
+                            style={{ color: '#ef4444', fontWeight: 800, padding: 0, width: 22, height: 22, lineHeight: '22px' }}
+                          >
+                            -
+                          </Button>
+                        }
+                        addonAfter={
+                          <Button
+                            size="middle"
+                            type="text"
+                            onClick={() => setMoneyStep((moneyStep ?? 0) + 1000)}
+                            style={{ color: '#10b981', fontWeight: 800, padding: 0, width: 22, height: 22, lineHeight: '22px' }}
+                          >
+                            +
+                          </Button>
+                        }
                       />
                     </Space>
                     <Button type="primary" icon={<PlusOutlined />} onClick={addRound} size="middle" style={{ background: '#4f46e5' }}>

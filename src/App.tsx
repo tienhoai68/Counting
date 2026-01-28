@@ -239,7 +239,7 @@ export default function App() {
 
   const resetGameNow = () => {
     setRounds([])
-    setMoneyStep(10000)
+    setMoneyStep(5000)
 
     window.localStorage.removeItem('poker-app-rounds')
     window.localStorage.removeItem('poker-app-moneyStep')
@@ -942,7 +942,7 @@ export default function App() {
                       <InputNumber
                         size="middle"
                         value={moneyStep}
-                        onChange={(value) => setMoneyStep(value || 1000)}
+                        onChange={(value) => setMoneyStep(value || 5000)}
                         step={1000}
                         min={0}
                         controls={false}
@@ -954,7 +954,7 @@ export default function App() {
                           <Button
                             size="middle"
                             type="text"
-                            onClick={() => setMoneyStep(Math.max(0, (moneyStep ?? 0) - 1000))}
+                            onClick={() => setMoneyStep(Math.max(0, (moneyStep ?? 0) - 5000))}
                             style={{ color: '#ef4444', fontWeight: 800, padding: 0, width: 22, height: 22, lineHeight: '22px' }}
                           >
                             -
@@ -964,7 +964,7 @@ export default function App() {
                           <Button
                             size="middle"
                             type="text"
-                            onClick={() => setMoneyStep((moneyStep ?? 0) + 1000)}
+                            onClick={() => setMoneyStep((moneyStep ?? 0) + 5000)}
                             style={{ color: '#10b981', fontWeight: 800, padding: 0, width: 22, height: 22, lineHeight: '22px' }}
                           >
                             +

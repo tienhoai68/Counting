@@ -29,6 +29,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import * as XLSX from 'xlsx'
 import './App.css'
+import logo from './assets/logo.svg'
 import useStickyState from './hooks/useStickyState'
 
 const CrownIcon = ({ size = 14 }: { size?: number }) => (
@@ -758,10 +759,25 @@ export default function App() {
             borderBottom: isDarkMode ? '1px solid rgba(148, 163, 184, 0.16)' : 'none',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Typography.Title level={4} style={{ margin: 0, color: 'white' }}>
-              Tính tiền
-            </Typography.Title>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, height: 64 }}>
+            <img
+              src={logo}
+              alt="Settlement"
+              style={{ width: 28, height: 28, flex: '0 0 auto', display: 'block', verticalAlign: 'middle' }}
+            />
+            <div
+              style={{
+                color: 'white',
+                fontSize: 20,
+                fontWeight: 700,
+                lineHeight: '28px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              Settlement
+            </div>
           </div>
           <Space>
             <Button

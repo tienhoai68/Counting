@@ -11,6 +11,7 @@ import {
   Button,
   Card,
   ConfigProvider,
+  Grid,
   Input,
   InputNumber,
   Layout,
@@ -21,11 +22,11 @@ import {
   Space,
   Table,
   Tabs,
-  Typography,
-  theme,
+  theme
 } from 'antd'
 import { saveAs } from 'file-saver'
 import { useEffect, useMemo, useRef, useState } from 'react'
+
 
 import * as XLSX from 'xlsx'
 import './App.css'
@@ -76,7 +77,6 @@ function nameById(players: Player[], id: string) {
 // --- COMPONENT ---
 export default function App() {
   const [players, setPlayers] = useStickyState<Player[]>(DEFAULT_PLAYERS, 'poker-app-players')
-  const [isPortrait, setIsPortrait] = useState(false)
   const [rounds, setRounds] = useStickyState<GameRound[]>([], 'poker-app-rounds')
   const [moneyStep, setMoneyStep] = useStickyState<number>(5000, 'poker-app-moneyStep')
 
@@ -92,24 +92,6 @@ export default function App() {
     document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light')
   }, [isDarkMode])
 
-  useEffect(() => {
-    const compute = () => {
-      // Prefer screen.orientation when available; fallback to viewport ratio.
-      const so: any = (window.screen as any)?.orientation
-      const isPortraitByApi = typeof so?.type === 'string' ? so.type.startsWith('portrait') : undefined
-      const isPortraitByRatio = window.innerHeight > window.innerWidth
-      setIsPortrait(isPortraitByApi ?? isPortraitByRatio)
-    }
-
-    compute()
-    window.addEventListener('resize', compute)
-    window.addEventListener('orientationchange', compute)
-
-    return () => {
-      window.removeEventListener('resize', compute)
-      window.removeEventListener('orientationchange', compute)
-    }
-  }, [])
 
   const [isCelebrating, setIsCelebrating] = useState(false)
   const celebrationIntervalRef = useRef<number | null>(null)
@@ -661,9 +643,12 @@ export default function App() {
   })()
 
 
+  const screens = Grid.useBreakpoint()
+  const isMobile = !!screens.xs && !screens.sm
+
   const tableScroll = useMemo(() => {
-    const y = rounds.length > 10 ? 520 : undefined
-    // Force horizontal scroll once there are many player columns
+    const y = rounds.length > 3 ? 520 : undefined
+    // Desktop/tablet: keep Table scroll behavior. Mobile: we render card layout.
     const x = playerCount > 6 ? tableMinWidth : 'max-content'
     return y ? ({ x, y } as const) : ({ x } as const)
   }, [rounds.length, playerCount, tableMinWidth])
@@ -704,9 +689,12 @@ export default function App() {
       <Layout
         style={{
           minHeight: '100vh',
-          backgroundImage: isDarkMode
-            ? `url(${frameBg}), radial-gradient(1200px 500px at 10% 0%, rgba(79,70,229,0.22) 0%, rgba(11,18,32,1) 55%)`
-            : `url(${frameBg}), radial-gradient(1200px 500px at 10% 0%, rgba(79,70,229,0.12) 0%, rgba(247,248,252,1) 50%)`,
+          backgroundImage:
+            isMobile
+              ? 'none'
+              : isDarkMode
+                ? `url(${frameBg}), radial-gradient(1200px 500px at 10% 0%, rgba(79,70,229,0.22) 0%, rgba(11,18,32,1) 55%)`
+                : `url(${frameBg}), radial-gradient(1200px 500px at 10% 0%, rgba(79,70,229,0.12) 0%, rgba(247,248,252,1) 50%)`,
           // Make only the SVG background "faded" by blending it with a solid color.
           backgroundRepeat: 'no-repeat, no-repeat',
           backgroundPosition: 'center center, center center',
@@ -716,43 +704,6 @@ export default function App() {
           backgroundBlendMode: 'multiply, normal',
         }}
       >
-        {isPortrait ? (
-          <div
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 10000,
-              background: isDarkMode ? 'rgba(2, 6, 23, 0.92)' : 'rgba(15, 23, 42, 0.88)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 16,
-              textAlign: 'center',
-            }}
-          >
-            <div
-              style={{
-                maxWidth: 420,
-                width: '100%',
-                borderRadius: 14,
-                padding: 16,
-                background: isDarkMode ? 'rgba(17, 24, 39, 0.92)' : 'rgba(255,255,255,0.98)',
-                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.55)' : '0 12px 40px rgba(15,23,42,0.22)',
-                border: isDarkMode ? '1px solid rgba(148, 163, 184, 0.16)' : '1px solid rgba(15,23,42,0.10)',
-              }}
-            >
-              <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 8, color: isDarkMode ? 'rgba(255,255,255,0.92)' : '#0f172a' }}>
-                Vui lòng xoay ngang màn hình
-              </Typography.Title>
-              <Typography.Text style={{ display: 'block', marginBottom: 12, color: isDarkMode ? 'rgba(226,232,240,0.75)' : 'rgba(51,65,85,0.88)' }}>
-                Ứng dụng này được tối ưu cho chế độ ngang.
-              </Typography.Text>
-              <Button type="primary" onClick={() => (window.screen as any)?.orientation?.lock?.('landscape')}>
-                Thử tự xoay
-              </Button>
-            </div>
-          </div>
-        ) : null}
         <Layout.Header
           style={{
             background: '#A329AE',
@@ -761,6 +712,8 @@ export default function App() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            gap: 12,
+            flexWrap: 'wrap',
             boxShadow: isDarkMode ? '0 1px 3px rgba(0,0,0,0.5)' : '0 1px 3px rgba(0,0,0,0.1)',
             borderBottom: isDarkMode ? '1px solid rgba(148, 163, 184, 0.16)' : 'none',
           }}
@@ -786,63 +739,65 @@ export default function App() {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Button
-              onClick={() => setIsDarkMode((v) => !v)}
-              type="default"
-              style={{
-                padding: 0,
-                width: 64,
-                height: 34,
-                borderRadius: 999,
-                overflow: 'hidden',
-                background: isDarkMode ? 'rgba(15, 23, 42, 0.35)' : 'rgba(255,255,255,0.95)',
-                borderColor: isDarkMode ? 'rgba(226,232,240,0.35)' : 'rgba(15,23,42,0.18)',
-                boxShadow: isDarkMode ? '0 6px 18px rgba(0,0,0,0.35)' : '0 6px 18px rgba(15,23,42,0.12)',
-              }}
-            >
-              <div
+            {!isMobile ? (
+              <Button
+                onClick={() => setIsDarkMode((v) => !v)}
+                type="default"
                 style={{
-                  position: 'relative',
-                  width: '100%',
-                  height: '100%',
+                  padding: 0,
+                  width: 64,
+                  height: 34,
+                  borderRadius: 999,
+                  overflow: 'hidden',
+                  background: isDarkMode ? 'rgba(15, 23, 42, 0.35)' : 'rgba(255,255,255,0.95)',
+                  borderColor: isDarkMode ? 'rgba(226,232,240,0.35)' : 'rgba(15,23,42,0.18)',
+                  boxShadow: isDarkMode ? '0 6px 18px rgba(0,0,0,0.35)' : '0 6px 18px rgba(15,23,42,0.12)',
                 }}
               >
                 <div
                   style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0 10px',
-                    fontSize: 14,
-                    color: isDarkMode ? 'rgba(226,232,240,0.85)' : 'rgba(15,23,42,0.65)',
+                    position: 'relative',
+                    width: '100%',
+                    height: '100%',
                   }}
                 >
-                  <MoonOutlined />
-                  <SunOutlined />
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0 10px',
+                      fontSize: 14,
+                      color: isDarkMode ? 'rgba(226,232,240,0.85)' : 'rgba(15,23,42,0.65)',
+                    }}
+                  >
+                    <MoonOutlined />
+                    <SunOutlined />
+                  </div>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 3,
+                      left: isDarkMode ? 33 : 3,
+                      width: 28,
+                      height: 28,
+                      borderRadius: 999,
+                      background: isDarkMode ? 'rgba(226,232,240,0.92)' : 'rgba(255,255,255,0.98)',
+                      boxShadow: isDarkMode ? '0 6px 16px rgba(0,0,0,0.35)' : '0 6px 16px rgba(15,23,42,0.18)',
+                      transition: 'left 180ms ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: isDarkMode ? '#0f172a' : '#4f46e5',
+                    }}
+                  >
+                    {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+                  </div>
                 </div>
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 3,
-                    left: isDarkMode ? 33 : 3,
-                    width: 28,
-                    height: 28,
-                    borderRadius: 999,
-                    background: isDarkMode ? 'rgba(226,232,240,0.92)' : 'rgba(255,255,255,0.98)',
-                    boxShadow: isDarkMode ? '0 6px 16px rgba(0,0,0,0.35)' : '0 6px 16px rgba(15,23,42,0.18)',
-                    transition: 'left 180ms ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: isDarkMode ? '#0f172a' : '#4f46e5',
-                  }}
-                >
-                  {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
-                </div>
-              </div>
-            </Button>
+              </Button>
+            ) : null}
             <Button
               icon={<ReloadOutlined />}
               onClick={resetGame}
@@ -986,19 +941,132 @@ export default function App() {
                 style={{ borderRadius: 14, boxShadow: '0 8px 28px rgba(15,23,42,0.06)' }}
                 bodyStyle={{ padding: 0 }}
               >
-                <Table
-                  className="cp-table-bg"
-                  style={{
-                    ['--cp-table-bg-image' as any]: `url(${frameBg})`,
-                  }}
-                  columns={tableColumns as any}
-                  dataSource={rounds}
-                  rowKey="id"
-                  pagination={false}
-                  size="small"
-                  scroll={tableScroll}
-                  sticky
-                />
+                {isMobile ? (
+                  <div
+                    className="cp-rounds-mobile"
+                    style={rounds.length > 3 ? { maxHeight: 'calc(100vh - 260px)', overflowY: 'auto' } : undefined}
+                  >
+                    {rounds.map((r, i) => {
+                      const bankerName = players.find((p) => p.id === r.bankerId)?.name
+                      const sumParticipants = players
+                        .filter((p) => p.id !== r.bankerId)
+                        .reduce((s, p) => s + (r.values[p.id] ?? 0), 0)
+                      const bankerValue = -sumParticipants
+
+                      return (
+                        <Card
+                          key={r.id}
+                          size="small"
+                          className="cp-round-card"
+                          title={
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                              <div style={{ fontWeight: 800 }}>Ván {i + 1}</div>
+                              <Popconfirm title="Xóa ván này?" onConfirm={() => removeRound(r.id)} okText="Xóa" cancelText="Hủy">
+                                <Button type="text" icon={<DeleteOutlined style={{ color: '#ef4444' }} />} />
+                              </Popconfirm>
+                            </div>
+                          }
+                          bodyStyle={{ padding: 12 }}
+                        >
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{ width: 54, fontWeight: 700, opacity: 0.8 }}>Cái</div>
+                              <Select
+                                value={r.bankerId || undefined}
+                                onChange={(val) => updateRound(r.id, { bankerId: val })}
+                                style={{ width: '100%' }}
+                                placeholder="Chọn cái"
+                                options={players.map((p) => ({ value: p.id, label: p.name }))}
+                                size="middle"
+                              />
+                              {r.bankerId ? <CrownIcon size={16} /> : null}
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 10 }}>
+                              {players
+                                .filter((p) => p.id !== r.bankerId)
+                                .map((p) => {
+                                  const isBanker = false
+                                  const value = r.values[p.id]
+                                  const className = getMoneyClass(r.values[p.id], isBanker)
+
+                                  return (
+                                    <div key={p.id} className="cp-round-player-row">
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                                        <div style={{ fontWeight: 700, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                          {p.name}
+                                        </div>
+                                        <div style={{ flex: '0 0 180px', maxWidth: '100%' }}>
+                                          <InputNumber
+                                            value={value}
+                                            disabled={false}
+                                            onChange={(val) => updateRoundValue(r.id, p.id, val)}
+                                            step={moneyStep}
+                                            controls={false}
+                                            addonBefore={
+                                              <Button
+                                                size="large"
+                                                type="text"
+                                                disabled={false}
+                                                onClick={() => updateRoundValue(r.id, p.id, (r.values[p.id] ?? 0) - moneyStep)}
+                                                style={{ color: '#ef4444', fontWeight: 800, padding: 0, width: 28, height: 28, lineHeight: '28px' }}
+                                              >
+                                                -
+                                              </Button>
+                                            }
+                                            addonAfter={
+                                              <Button
+                                                size="large"
+                                                type="text"
+                                                disabled={false}
+                                                onClick={() => updateRoundValue(r.id, p.id, (r.values[p.id] ?? 0) + moneyStep)}
+                                                style={{ color: '#10b981', fontWeight: 800, padding: 0, width: 28, height: 28, lineHeight: '28px' }}
+                                              >
+                                                +
+                                              </Button>
+                                            }
+                                            formatter={(v) => {
+                                              if (v === undefined || v === null) return ''
+                                              const n = Number(v)
+                                              if (!Number.isFinite(n)) return ''
+                                              return new Intl.NumberFormat('vi-VN').format(n)
+                                            }}
+                                            parser={(v) => {
+                                              const raw = (v ?? '').toString().replace(/\./g, '').replace(/₫/g, '').trim()
+                                              const n = Number(raw)
+                                              return Number.isFinite(n) ? n : 0
+                                            }}
+                                            style={{ width: '100%', textAlign: 'center' }}
+                                            className={`${className} cp-inputnumber-square-center`}
+                                            placeholder="0"
+                                            size="middle"
+                                          />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                            </div>
+                          </div>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <Table
+                    className="cp-table-bg"
+                    style={{
+                      ['--cp-table-bg-image' as any]: `url(${frameBg})`,
+                    }}
+                    columns={tableColumns as any}
+                    dataSource={rounds}
+                    rowKey="id"
+                    pagination={false}
+                    size="small"
+                    scroll={tableScroll}
+                    sticky
+                  />
+                )}
                 {rounds.length === 0 && (
                   <div style={{ padding: 18, textAlign: 'center', color: isDarkMode ? 'rgba(226,232,240,0.6)' : '#64748b' }}>
                     <div style={{ fontWeight: 600 }}>Chưa có ván nào</div>
@@ -1096,35 +1164,38 @@ export default function App() {
                 />
               </Card>
 
-              <Card
-                title={
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 700 }}>Người chơi</span>
-                    <Button type="text" icon={<UserAddOutlined />} onClick={addPlayer} size="small" style={{ color: '#4f46e5' }}>
-                      Thêm
-                    </Button>
-                  </div>
-                }
-                style={{ borderRadius: 14, boxShadow: '0 8px 28px rgba(15,23,42,0.06)' }}
-                bodyStyle={{ padding: 0 }}
-              >
-                <List
-                  size="small"
-                  dataSource={players}
-                  renderItem={(p) => (
-                    <List.Item
-                      style={{ padding: '8px 12px' }}
-                      actions={[
-                        <Popconfirm title={`Xóa ${p.name}?`} onConfirm={() => removePlayer(p.id)} okText="Xóa" cancelText="Hủy">
-                          <Button type="text" icon={<DeleteOutlined style={{ color: '#ef4444' }} />} size="small" />
-                        </Popconfirm>,
-                      ]}
-                    >
-                      <Input defaultValue={p.name} onBlur={(e) => renamePlayer(p.id, e.target.value)} variant="borderless" />
-                    </List.Item>
-                  )}
-                />
-              </Card>
+             <Card
+  title={
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ fontWeight: 700 }}>Người chơi</span>
+      <Button type="text" icon={<UserAddOutlined />} onClick={addPlayer} size="small" style={{ color: '#4f46e5' }}>
+        Thêm
+      </Button>
+    </div>
+  }
+  style={{ borderRadius: 14, boxShadow: '0 8px 28px rgba(15,23,42,0.06)' }}
+  bodyStyle={{ padding: 0 }}
+>
+  <List
+    size="small"
+    dataSource={players}
+    renderItem={(p) => (
+      <List.Item style={{ padding: '8px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          <Input
+            defaultValue={p.name}
+            onBlur={(e) => renamePlayer(p.id, e.target.value)}
+            variant="borderless"
+            style={{ flex: 1, minWidth: 0 }}
+          />
+          <Popconfirm title={`Xóa ${p.name}?`} onConfirm={() => removePlayer(p.id)} okText="Xóa" cancelText="Hủy">
+            <Button type="text" icon={<DeleteOutlined style={{ color: '#ef4444' }} />} size="small" />
+          </Popconfirm>
+        </div>
+      </List.Item>
+    )}
+  />
+</Card>
             </div>
           </div>
         </div>

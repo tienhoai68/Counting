@@ -947,11 +947,6 @@ export default function App() {
                     style={rounds.length > 3 ? { maxHeight: 'calc(100vh - 260px)', overflowY: 'auto' } : undefined}
                   >
                     {rounds.map((r, i) => {
-                      const bankerName = players.find((p) => p.id === r.bankerId)?.name
-                      const sumParticipants = players
-                        .filter((p) => p.id !== r.bankerId)
-                        .reduce((s, p) => s + (r.values[p.id] ?? 0), 0)
-                      const bankerValue = -sumParticipants
 
                       return (
                         <Card
